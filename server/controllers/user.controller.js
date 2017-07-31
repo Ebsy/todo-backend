@@ -1,12 +1,20 @@
+import bcrypt from 'bcrypt';
+
+
 import User from '../models/user.model';
+// import config from '../../config/config';
+
+const debug = require('debug')('todo-backend:userCtrl');
 
 /**
  * Load user and append to req.
  */
-function load(req, res, next, id) {
-  User.get(id)
+function load(req, res, next, email) {
+  User.get(email)
     .then((user) => {
-      req.user = user; // eslint-disable-line no-param-reassign
+      // debug(user);
+      // debug(req);
+      req.userFull = user;
       return next();
     })
     .catch(e => next(e));
@@ -17,7 +25,8 @@ function load(req, res, next, id) {
  * @returns {User}
  */
 function get(req, res) {
-  return res.json(req.user);
+  debug(req.user);
+  return res.json(req.userFull);
 }
 
 /**
@@ -27,9 +36,10 @@ function get(req, res) {
  * @returns {User}
  */
 function create(req, res, next) {
+  const salt = bcrypt.genSaltSync(10);
   const user = new User({
-    username: req.body.username,
-    mobileNumber: req.body.mobileNumber
+    email: req.body.email,
+    password: bcrypt.hashSync(req.body.password, salt)
   });
 
   user.save()
@@ -44,13 +54,22 @@ function create(req, res, next) {
  * @returns {User}
  */
 function update(req, res, next) {
-  const user = req.user;
-  user.username = req.body.username;
-  user.mobileNumber = req.body.mobileNumber;
+  const todo = req.body.todo;
+  const email = req.userFull.email;
 
-  user.save()
-    .then(savedUser => res.json(savedUser))
+  User.update(email, todo)
+    .then((updatedUser) => {
+      res.json(updatedUser);
+    })
     .catch(e => next(e));
+
+  // const user = req.userFull;
+  // user.username = req.body.username;
+  // user.mobileNumber = req.body.mobileNumber;
+  //
+  // user.save()
+  //   .then(savedUser => res.json(savedUser))
+  //   .catch(e => next(e));
 }
 
 /**
@@ -60,8 +79,13 @@ function update(req, res, next) {
  * @returns {User[]}
  */
 function list(req, res, next) {
-  const { limit = 50, skip = 0 } = req.query;
-  User.list({ limit, skip })
+  const {
+    limit = 50, skip = 0
+  } = req.query;
+  User.list({
+    limit,
+    skip
+  })
     .then(users => res.json(users))
     .catch(e => next(e));
 }
@@ -77,4 +101,11 @@ function remove(req, res, next) {
     .catch(e => next(e));
 }
 
-export default { load, get, create, update, list, remove };
+export default {
+  load,
+  get,
+  create,
+  update,
+  list,
+  remove
+};
