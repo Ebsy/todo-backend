@@ -7,7 +7,6 @@ import config from '../../config/config';
 
 const debug = require('debug')('todo-backend:authCtrl');
 
-
 /**
  * Returns jwt token if valid username and password is provided
  * @param req
@@ -16,7 +15,6 @@ const debug = require('debug')('todo-backend:authCtrl');
  * @returns {*}
  */
 function login(req, res, next) {
-  debug('in login!');
   User.get(req.body.email, true)
     .then((user) => {
       debug(user);
